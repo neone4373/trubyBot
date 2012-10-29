@@ -13,18 +13,18 @@ class TwitPull
   def classToType a, b
     if a.class == Fixnum
       if b.key(a) == 'id'
-        return 'int PRIMARY KEY'
+        return 'bigint PRIMARY KEY'
       else
-        return 'int'	    
+        return 'integer'	    
       end
     elsif a.class == Float
-      return 'float8'
+      return 'real'
     elsif a.class == TrueClass 
-      return 'bool'
+      return 'boolean'
     elsif a.class == FalseClass 
-      return 'bool'    
+      return 'boolean'    
     else
-      return 'text'
+      return 'char(150)'
     end
   end
 
@@ -51,7 +51,7 @@ class TwitPull
       end
       @usersCol = @usersCol + ');'
       puts @usersCol
-      @tweetCol = 'Create table twitter.tweets ( id' + ' ' + classToType(chirp['id'],chirp) + ', user_id int'
+      @tweetCol = 'Create table twitter.tweets ( id bigint PRIMARY KEY, user_id bigint'
       chirp.keys.each do |f|
         unless f == 'user' || f == 'id'
 	  @tweetCol = @tweetCol + ', ' + f + ' ' + classToType(chirp[f.to_s],chirp).to_s 

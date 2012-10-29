@@ -41,10 +41,10 @@ def crackGracklePost moos, type, message
     client = Grackle::Client.new(
      :auth=>{
       :type=>:oauth,
-      consumer_key: all_oauth["Consumer_key"].to_s,
-      consumer_secret: all_oauth["Consumer_secret"].to_s,
-      token: all_oauth["Access_token"].to_s, 
-      token_secret: all_oauth["Access_token_secret"].to_s
+      consumer_key: all_oauth['Twit']["Consumer_key"].to_s,
+      consumer_secret: all_oauth['Twit']["Consumer_secret"].to_s,
+      token: all_oauth['Twit']["Access_token"].to_s, 
+      token_secret: all_oauth['Twit']["Access_token_secret"].to_s
       }, 
       :handlers=>{:json=>Grackle::Handlers::StringHandler.new }
     )
@@ -61,10 +61,10 @@ def crackGrackleGet moos, type
     client = Grackle::Client.new(
      :auth=>{
       :type=>:oauth,
-      consumer_key: all_oauth["Consumer_key"].to_s,
-      consumer_secret: all_oauth["Consumer_secret"].to_s,
-      token: all_oauth["Access_token"].to_s, 
-      token_secret: all_oauth["Access_token_secret"].to_s
+      consumer_key: all_oauth['Twit']["Consumer_key"].to_s,
+      consumer_secret: all_oauth['Twit']["Consumer_secret"].to_s,
+      token: all_oauth['Twit']["Access_token"].to_s, 
+      token_secret: all_oauth['Twit']["Access_token_secret"].to_s
       }, 
       :handlers=>{:json=>Grackle::Handlers::StringHandler.new }
     )
