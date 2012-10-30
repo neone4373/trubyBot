@@ -149,4 +149,4 @@ end
 pug = TweetPull.new
 
 
-pug.twitterPulls 500 
+pug.twitterPulls 200 

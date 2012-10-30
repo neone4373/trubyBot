@@ -24,7 +24,7 @@ class TwitPull
     elsif a.class == FalseClass 
       return 'boolean'    
     else
-      return 'char(150)'
+      return 'text'
     end
   end
 
