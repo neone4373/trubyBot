@@ -50,7 +50,7 @@ def crackGracklePost moos, type, message
     )
     client.statuses.update.json! :status=>message #POST to http://twitter.com/statuses/update.json
   return
-    puts "Message Error"
+    puts "Message Errori #{$!}"
   end
 end 
 
@@ -81,12 +81,12 @@ end
 
 
 
-puts "no auth"
-userTwit un 
-puts
+#puts "no auth"
+#userTwit un 
+#puts
 puts 'grackle post'
-#crackGracklePost un, 'id', '@emilyellison986 the robots are comming for you!'
-puts "grackle get"
-userTwit un
+crackGracklePost un, 'id', '@emilyellison986 the robots we know you are there'
+puts "posted"
+#userTwit un
 
 #crackGrackleName 'PassActivism'

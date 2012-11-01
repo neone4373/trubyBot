@@ -28,17 +28,97 @@ class TweetPull
     end
   end
 
-  def userTwits 
-    @all_oauth = YAML.load_file("smtp.yml")
-    moos = rand(1000000000)
-    twits = JSON.parse(open("http://api.twitter.com/1/statuses/user_timeline.json?id=#{moos}").read)
-    @twits = twits
+  def nextInNetwork
+    @all_oauth = YAML.load_file("smtp.yml")  
+    dataConnect
+    #nextNet = @DB[:twitter__tweets].join(:twitter__users, :id => :in_reply_to_user_id).where('users.id is null and in_reply_to_user_id is not null').order(:in_reply_to_user_id).first
+    nextNet = @DB['select t.in_reply_to_user_id from twitter.tweets t left join twitter.users u on t.in_reply_to_user_id=u.id left join twitter.no_user n on t.in_reply_to_user_id = n.id where u.id is null and n.id is null and t.in_reply_to_user_id is not null  order by 1 limit 1']
+    nextNet = nextNet.map(:in_reply_to_user_id)
+    @nextNet =  nextNet[0]
+#    puts @nextNet.class.to_s + " #{@nextNet}"
+    dataDisconnect    
   end
 
+  def userTwits 
+#    moos = rand(1000000000)
+    nextInNetwork
+    @moos =  @nextNet
+    puts "---#{@moos}---#{@moos.class}---"
+    twits = JSON.parse(open("http://api.twitter.com/1/statuses/user_timeline.json?id=#{@moos}").read)
+    @twits = twits
+  end
+  def userTwitsT moo 
+#    moos = rand(1000000000)
+    nextInNetwork
+    @moos =  moo
+    puts "---#{@moos}---#{@moos.class}---"
+    twits = JSON.parse(open("http://api.twitter.com/1/statuses/user_timeline.json?id=#{@moos}").read)
+    @twits = twits
+  end
   def splitTwitToApp
-    begin
+     begin
+      @ll = 0
 #      puts 'Pulls the twits'
-      userTwits 
+      userTwits
+      @ll += 1
+#      puts 'Open the database'
+
+      @ll += 1
+      twit = @twits[0]['user']
+      @usersAdd = twit
+#      puts "Inserts user #{twit['name']} into Users table"
+      dbAppUsers @usersAdd
+      @ll += 1
+      @k = 0              
+#      puts "Inserts tweets for  #{twit['name']} into Tweets table"
+      @twits.each do |f|
+        index = @twits.find_index(f)
+#        puts index
+        f.delete('user')
+	f.delete('coordinates')
+	f.delete('geo')
+	f.delete('place')
+#	puts @twits[index]['coordinates']
+	fixed = {'id' => f['id'], 
+		'user_id' => @usersAdd['id'],
+		'geo' =>  @twits[index]['geo'].to_s,
+		'coordinates' => @twits[index]['coordinates'].to_s,
+		'place' => @twits[index]['place'].to_s
+	}
+	@tweetCol = fixed.merge(f)
+#        puts @tweetCol
+        dbAppTweets @tweetCol 
+#        puts "Finished dbAppTweet"
+      end
+      @ll += 1
+      @i += 1
+    rescue
+      @j += 1
+      @k += 1
+      nonUserCodes
+      bad = {'id' => @moos, 'query_time' => Time.now, 'desc' => @gg}
+      dbAppNonUsers bad
+    end
+  end
+  def nonUserCodes
+    if @ll == 0
+      @gg ="0 Error before userTwist: #{$!}"
+    elsif @ll == 1
+      @gg = "1 Error before dataConnect: #{$!}"
+    elsif @ll == 2
+      @gg = "2 Error before dbAppUsers: #{$!}"
+    elsif @ll == 3
+      @gg = "3 Error before dbAppUsers: #{$!}"
+    elsif @ll == 4
+      @gg = "4 no error ?: #{$!}"
+    else
+      @gg = "#{ll} unexpected result: #{$!}"
+    end
+  end
+  def splitTwitToAppT
+#     begin
+#      puts 'Pulls the twits'
+      userTwitsT 2015
 #      puts 'Open the database'
       dataConnect
       twit = @twits[0]['user']
@@ -47,19 +127,33 @@ class TweetPull
       dbAppUsers @usersAdd
       @k = 0              
 #      puts "Inserts tweets for  #{twit['name']} into Tweets table"
-      @twits.each do |f|
-	f.delete('user')
-        fixed = {'id' => f['id'], 'user_id' => @usersAdd['id']}
-	@tweetCol = fixed.merge(f)
-        dbAppTweets @tweetCol 
 
+      @twits.each do |f|
+        index = @twits.find_index(f)
+        puts index
+        f.delete('user')
+	f.delete('coordinates')
+	f.delete('geo')
+	f.delete('place')
+	puts @twits[index]['coordinates']
+	fixed = {'id' => f['id'], 
+		'user_id' => @usersAdd['id'],
+		'geo' =>  @twits[index]['geo'].to_s,
+		'coordinates' => @twits[index]['coordinates'].to_s,
+		'place' => @twits[index]['place'].to_s
+	}
+	@tweetCol = fixed.merge(f)
+#	puts @tweetCol
+        dbAppTweets @tweetCol 
+#        puts "Finished dbAppTweet"
       end
       @i += 1
-    rescue
-#      puts "Bad Roll"
-      @j += 1
-      @k += 1
-    end
+#    rescue
+#      @j += 1
+#      @k += 1
+#      bad = {'id' => @moos, 'query_time' => Time.now}
+#      dbAppNonUsers bad
+#    end
   end
 
   def dataConnect
@@ -68,29 +162,43 @@ class TweetPull
 			  password: @all_oauth['Post']["Pass"].to_s, 
 			  host: @all_oauth['Post']['Host'].to_s, 
 			  port:@all_oauth['Post']['Port'], 
-			  max_connections: 10)
+			  max_connections: 50)
   end
-
+  def dataDisconnect
+    @DB.disconnect
+  end
   def dbAppUsers uncle
+    dataConnect
     bill = @DB[:twitter__users].filter(:id => uncle['id']).map(:id)
-    if bill != []
-      @DB[:twitter__users].update(uncle)
+#    puts "--#{bill[0]}--"
+    if bill[0] != nil
+      puts "correct tree"
+#      @DB[:twitter__users].where(:id => bill[0]).delete
+#      @DB[:twitter__users].insert(uncle)
+#      @DB[:twitter__users].update(uncle)
 #      puts '   ' + uncle['name'] + ' updated'
     else
       @DB[:twitter__users].insert(uncle)
 #      puts '   ' + uncle['name'] + ' created'
     end
+    dataDisconnect
   end
 
   def dbAppTweets uncle
+    dataConnect	  
     jill = @DB[:twitter__tweets].filter(:id => uncle['id']).map(:id)
     unless jill != []
       @DB[:twitter__tweets].insert(uncle)
 #      puts '   ' + uncle['text'] + ' created'
     end
+    dataDisconnect
   end
-
-  def userTwit moos
+  def dbAppNonUsers uncle
+    dataConnect
+    @DB[:twitter__no_user].insert(uncle)
+    dataDisconnect
+  end
+  def userTwit moos 
     begin
       puts
       twits = JSON.parse(open("http://api.twitter.com/1/statuses/user_timeline.json?id=#{moos}").read)
@@ -118,7 +226,7 @@ class TweetPull
       )
       client.statuses.update.json! :status=>message #POST to http://twitter.com/statuses/update.json
     return
-      puts "Message Error"
+      puts "Message Error #{$!}"
     end
   end 
 
@@ -126,7 +234,7 @@ class TweetPull
     t = Time.now - d
     @message =  "  Out of #{a} attempts #{b} catches  with #{c} bad rolls \n  Run over #{t} seconds \n  K hits #{e}"
     puts @message
-    crackGracklePost @message
+      crackGracklePost @message
   end
 
   def twitterPulls x
@@ -143,10 +251,10 @@ class TweetPull
     end
     countKill x, @i, @j, start_time, @k
   end
-
 end
 
 pug = TweetPull.new
 
 
-pug.twitterPulls 500 
+pug.twitterPulls 150
+
