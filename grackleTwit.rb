@@ -32,7 +32,7 @@ def userTwit moos
 	puts "User not found"
   end
 end
-
+#http://api.twitter.com/1/users/user_timeline/496249821.json
 #userTwit un
 
 def crackGracklePost moos, type, message
@@ -68,13 +68,20 @@ def crackGrackleGet moos, type
       }, 
       :handlers=>{:json=>Grackle::Handlers::StringHandler.new }
     )
-    littleMoo = client.users.show.json? type.to_sym=> moos #http://twitter.com/users/show.json?#{type}=moos
+    littleMoo = client.statuses.user_timeline.json? type.to_sym=> moos 
+    #http://twitter.com/statuses/user_timeline.json?#{type}=moos
     twits = JSON.parse("#{littleMoo}")
-    puts 'Tweets from ' + twits['screen_name']
+    puts 'Tweets from ' + twits[0]['user']['screen_name']
+    @callLeft = client.response.headers["X-Ratelimit-Remaining"].to_s
+    puts @callLeft
     puts
-    puts '  On ' + twits['status']['created_at'] + ': ' + twits['status']['text']
+#    puts twits.to_s
+    twits.each do |chirp|
+      puts '  On ' + chirp['created_at'] + ': ' + chirp['text']
+    end
+
    rescue
-    puts "User not found"
+    puts "Error: #{$!}"
   end
 end
 
@@ -84,9 +91,10 @@ end
 #puts "no auth"
 #userTwit un 
 #puts
-puts 'grackle post'
-crackGracklePost un, 'id', '@emilyellison986 the robots we know you are there'
-puts "posted"
+#puts 'grackle post'
+#crackGracklePost un, 'id', '@emilyellison986 the robots we know you are there'
+#puts "posted"
 #userTwit un
 
 #crackGrackleName 'PassActivism'
+crackGrackleGet un, 'id'
